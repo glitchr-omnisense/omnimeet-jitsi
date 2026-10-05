@@ -1,0 +1,50 @@
+{
+    "name": "omnimeet/jitsi",
+    "type": "library",
+    "description": "Omnimeet Jitsi: a video meeting on a Jitsi Meet instance - one's own, a public one, or 8x8's Jitsi as a Service - embedded through the IFrame API and driven from the page, a JSON Web Token per participant (shared secret or key pair), several people, JaaS webhooks read and their signature checked.",
+    "keywords": [
+        "video",
+        "meeting",
+        "conference",
+        "jitsi",
+        "jitsi-meet",
+        "jaas",
+        "jwt",
+        "omnimeet"
+    ],
+    "homepage": "https://github.com/glitchr-studio/omnimeet-jitsi",
+    "license": "LGPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Marco Meyer",
+            "email": "marco.meyer@glitchr.io"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "glitchr/omnimeet": "^1.0@dev"
+    },
+    "require-dev": {
+        "ext-openssl": "*",
+        "phpunit/phpunit": "^11.0"
+    },
+    "suggest": {
+        "ext-openssl": "Tokens signed with a private key (RS256): Jitsi as a Service, or an instance that validates against a public key server"
+    },
+    "autoload": {
+        "psr-4": {
+            "Omnimeet\\Jitsi\\": ""
+        },
+        "exclude-from-classmap": [
+            "/Tests/"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Omnimeet\\Jitsi\\Tests\\": "Tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
