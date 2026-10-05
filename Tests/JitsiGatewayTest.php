@@ -135,9 +135,10 @@ final class JitsiGatewayTest extends TestCase
         $pair = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => \OPENSSL_KEYTYPE_RSA]);
         openssl_pkey_export($pair, $private);
         $public = openssl_pkey_get_details($pair)['key'];
-        $appId = 'vpaas-magic-cookie-1fc542a3e4414a44b2611668195e2bfe';
+        // Made up, in the shape of a JaaS AppID: not an account.
+        $appId = 'vpaas-magic-cookie-00000000000000000000000000000000';
 
-        $gateway = (new JitsiGatewayFactory())->create(['domain' => '8x8.vc', 'app_id' => $appId, 'private_key' => $private, 'key_id' => $appId.'/4f4910', 'features' => ['recording' => true]]);
+        $gateway = (new JitsiGatewayFactory())->create(['domain' => '8x8.vc', 'app_id' => $appId, 'private_key' => $private, 'key_id' => $appId.'/test-key', 'features' => ['recording' => true]]);
         self::assertTrue($gateway->capabilities()->recording);
 
         $meeting = $gateway->open($this->meeting());
@@ -147,7 +148,7 @@ final class JitsiGatewayTest extends TestCase
         self::assertStringStartsWith('https://8x8.vc/'.$appId.'/'.$meeting->reference.'?jwt=', $access->url);
 
         $token = $access->options['jwt'];
-        self::assertSame(['typ' => 'JWT', 'alg' => 'RS256', 'kid' => $appId.'/4f4910'], Jwt::header($token));
+        self::assertSame(['typ' => 'JWT', 'alg' => 'RS256', 'kid' => $appId.'/test-key'], Jwt::header($token));
         $claims = Jwt::verify($token, $public);
         self::assertSame(['jitsi', 'chat', $appId, $meeting->reference], [$claims['aud'], $claims['iss'], $claims['sub'], $claims['room']], 'aud and iss are JaaS\'s constants, sub the AppID');
         self::assertLessThanOrEqual(time(), $claims['nbf']);
