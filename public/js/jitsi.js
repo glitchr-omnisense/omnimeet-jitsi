@@ -13,7 +13,7 @@
  *                           locale, subject, config, interfaceConfig
  *   data-autostart="1"      enter at once; otherwise the page says when
  *
- * and, inside it, [data-jitsi-frame] where the frame goes (the root itself
+ * and, inside it, [data-omnimeet-frame] where the frame goes (the root itself
  * when there is none).
  *
  * The page tells it what to do with events on the root - "omnimeet:join",
@@ -48,7 +48,7 @@
 
         var options = {};
         try { options = JSON.parse(root.dataset.options || '{}'); } catch (e) {}
-        var holder = root.querySelector('[data-jitsi-frame]') || root;
+        var holder = root.querySelector('[data-omnimeet-frame]') || root;
         var api = null, joining = false;
 
         function emit(name, detail) {
