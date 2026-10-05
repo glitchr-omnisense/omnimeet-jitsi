@@ -10,7 +10,8 @@
  *   data-omnimeet-jitsi     marks the root
  *   data-options            the Access options, as JSON: domain, api (the address of
  *                           external_api.js), room, role, and when there are any jwt, name,
- *                           locale, subject, config, interfaceConfig
+ *                           locale, subject, config, interfaceConfig; timeout, the seconds
+ *                           after which a meeting that has not started is an error (60)
  *   data-autostart="1"      enter at once; otherwise the page says when
  *
  * and, inside it, [data-omnimeet-frame] where the frame goes (the root itself
@@ -21,7 +22,9 @@
  * everyone, where the instance allows it; hangs up otherwise) - or through
  * root.omnimeet.{join, leave, end}(). It tells the page where it stands on
  * the root: data-visio-state and an "omnimeet:state" event ({state}:
- * loading, joined, left, error), and "omnimeet:participants" ({count}).
+ * loading, joined, left, error - an error has a message, and the name
+ * "timeout" when the frame never started), and "omnimeet:participants"
+ * ({count}).
  */
 (function () {
     'use strict';
@@ -49,7 +52,7 @@
         var options = {};
         try { options = JSON.parse(root.dataset.options || '{}'); } catch (e) {}
         var holder = root.querySelector('[data-omnimeet-frame]') || root;
-        var api = null, joining = false;
+        var api = null, joining = false, waiting = null;
 
         function emit(name, detail) {
             try { root.dispatchEvent(new CustomEvent(name, { bubbles: true, detail: detail || {} })); } catch (e) {}
@@ -62,6 +65,7 @@
             if (api) emit('omnimeet:participants', { count: api.getNumberOfParticipants() });
         }
         function dispose() {
+            clearTimeout(waiting);
             if (!api) return;
             try { api.dispose(); } catch (e) {}
             api = null;
@@ -80,7 +84,14 @@
                 if (options.config) settings.configOverwrite = options.config;
                 if (options.interfaceConfig) settings.interfaceConfigOverwrite = options.interfaceConfig;
                 api = new window.JitsiMeetExternalAPI(options.domain, settings);
+                // No event says a frame was refused (an instance may forbid being embedded): after a while without
+                // the conference, say so - the page can offer the address instead.
+                var started = api;
+                waiting = setTimeout(function () {
+                    if (api === started && root.dataset.visioState === 'loading') state('error', { name: 'timeout', message: 'The meeting did not start: the instance may refuse to be embedded.' });
+                }, (options.timeout || 60) * 1000);
                 api.addListener('videoConferenceJoined', function (event) {
+                    clearTimeout(waiting);
                     if (options.subject && options.role === 'host') api.executeCommand('subject', options.subject);
                     state('joined', { id: event && event.id });
                     count();
@@ -97,7 +108,9 @@
         }
         function leave() {
             if (!api) return;
-            try { api.executeCommand('hangup'); } catch (e) { dispose(); state('left'); }
+            try { api.executeCommand('hangup'); } catch (e) { dispose(); state('left'); return; }
+            // "readyToClose" says the hang up is done; a frame that never started says nothing: it goes all the same.
+            setTimeout(function () { if (api) { dispose(); state('left'); } }, 4000);
         }
         function end() {
             if (!api) return;

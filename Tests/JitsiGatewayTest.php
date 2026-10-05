@@ -178,6 +178,20 @@ final class JitsiGatewayTest extends TestCase
         self::assertArrayNotHasKey('name', $access->options);
     }
 
+    public function testAnInstanceThatForbidsBeingFramedGivesItsAddress(): void
+    {
+        $gateway = (new JitsiGatewayFactory())->create(['domain' => 'meet.example.org', 'app_id' => 'a', 'app_secret' => 's', 'embed' => false]);
+        self::assertSame([AccessKind::LINK], $gateway->capabilities()->access);
+
+        $meeting = $gateway->open($this->meeting());
+        $access = $gateway->join($meeting, Participant::guest('u7'));
+        self::assertSame(AccessKind::LINK, $access->kind);
+        self::assertStringStartsWith('https://meet.example.org/'.$meeting->reference.'?jwt=', (string) $access->url);
+        self::assertNull($access->script, 'nothing to drive');
+        self::assertSame(['https://meet.example.org'], $access->origins);
+        self::assertSame($meeting->endsAt->getTimestamp() + 300, $access->expiresAt->getTimestamp());
+    }
+
     /** @param array<string, mixed> $options */
     #[\PHPUnit\Framework\Attributes\DataProvider('misconfigured')]
     public function testAnInstanceMisconfiguredIsSaidWhenItIsFirstAsked(array $options, string $message): void

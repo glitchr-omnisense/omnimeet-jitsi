@@ -17,7 +17,9 @@ use Omnimeet\Request\Request;
  * JitsiMeetExternalAPI(domain, options) takes - roomName, jwt, userInfo,
  * lang, configOverwrite, interfaceConfigOverwrite. The token, when the
  * instance checks one, is made for this participant and this room, and
- * lapses a while after the meeting's end.
+ * lapses a while after the meeting's end. With "embed: false" - an
+ * instance that refuses to be framed - the answer is that address alone, to
+ * send the participant to.
  */
 final class JoinAction implements ActionInterface, ApiAwareInterface
 {
@@ -42,6 +44,13 @@ final class JoinAction implements ActionInterface, ApiAwareInterface
         $reference = $meeting->reference();
         $now = time();
         $token = $this->api->token($meeting, $participant, $now);
+
+        // An instance that forbids being embedded (X-Frame-Options, frame-ancestors): the address alone.
+        if (!$this->api->embeds()) {
+            $request->setResult(Access::link($this->api->url($reference, $token, $participant->locale), null !== $token ? (new \DateTimeImmutable())->setTimestamp($this->api->expiry($meeting, $now)) : null));
+
+            return;
+        }
 
         $request->setResult(Access::frame(
             $this->api->url($reference, $token, $participant->locale),

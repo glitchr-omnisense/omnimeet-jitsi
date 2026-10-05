@@ -181,6 +181,12 @@ final class Api
             : Jwt::sign($claims, (string) $this->config['app_secret'], Jwt::HS256);
     }
 
+    /** Whether the instance may be shown in a frame: some forbid it (X-Frame-Options, frame-ancestors). */
+    public function embeds(): bool
+    {
+        return (bool) $this->config->get('embed', true);
+    }
+
     public function webhookSecret(): ?string
     {
         $secret = (string) $this->config->get('webhook_secret', '');

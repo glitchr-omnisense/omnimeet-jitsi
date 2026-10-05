@@ -37,6 +37,7 @@ use Omnimeet\Model\Capabilities;
  *     room_secret: ~                           # set it when meeting keys can be guessed
  *     config: { disableInviteFunctions: true, disableThirdPartyRequests: true }   # config.js overrides
  *     interface_config: {}                     # interface_config.js overrides
+ *     embed: true                              # false: the instance forbids being framed - an address to go to instead
  *
  * Without app_secret nor private_key the instance is taken as open: anyone
  * who knows the room's name gets in, the name is the only secret.
@@ -70,6 +71,7 @@ final class JitsiGatewayFactory extends GatewayFactory
             'room_secret' => null,
             'config' => ['disableInviteFunctions' => true, 'disableThirdPartyRequests' => true],
             'interface_config' => [],
+            'embed' => true,
             'omnimeet.capabilities' => static fn (Config $c) => new Capabilities(
                 maxParticipants: null,
                 thirdParty: true,
@@ -78,7 +80,7 @@ final class JitsiGatewayFactory extends GatewayFactory
                 screenSharing: true,
                 chat: true,
                 tokens: '' !== (string) $c['app_secret'] || '' !== (string) $c['private_key'],
-                access: [AccessKind::FRAME, AccessKind::LINK],
+                access: $c['embed'] ? [AccessKind::FRAME, AccessKind::LINK] : [AccessKind::LINK],
             ),
             'omnimeet.api' => static fn (Config $c) => new Api($c),
             'omnimeet.action.open' => new OpenAction(),
