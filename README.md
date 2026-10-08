@@ -40,4 +40,4 @@ the media.
 that refuses to be framed (`embed: false`), the webhooks, and what was verified - a real meeting
 on a public open instance; tokens, JaaS and webhooks against the documentation only.
 
-License: LGPL-3.0-or-later.
+License: MIT since 2026-10-09; earlier versions remain published under LGPL-3.0-or-later.
