@@ -22,7 +22,7 @@
     ],
     "require": {
         "php": ">=8.2",
-        "glitchr/omnimeet": "^1.0@dev"
+        "omniscient/omnimeet": "^1.0@dev"
     },
     "require-dev": {
         "ext-openssl": "*",

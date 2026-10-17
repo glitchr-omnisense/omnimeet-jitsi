@@ -1,6 +1,6 @@
 # omnimeet/jitsi
 
-A video meeting on a **Jitsi Meet** instance, for [glitchr/omnimeet](https://github.com/glitchr-studio/omnimeet):
+A video meeting on a **Jitsi Meet** instance, for [omniscient/omnimeet](https://github.com/glitchr-studio/omnimeet):
 your own instance, a public one, or 8x8's Jitsi as a Service - embedded in the page through
 Jitsi's IFrame API and driven from it, a JSON Web Token per participant where the instance
 checks one, several people. Nothing is asked of the instance by this package: a Jitsi room
