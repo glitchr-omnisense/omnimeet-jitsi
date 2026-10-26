@@ -11,7 +11,7 @@ order: 1
 composer require omnimeet/jitsi
 ```
 
-PHP 8.2 or later, and `omniscient/omnimeet`: nothing else (`ext-openssl` only for tokens signed with
+PHP 8.2 or later, and `omnisense/omnimeet`: nothing else (`ext-openssl` only for tokens signed with
 a private key). No HTTP client: this package calls nothing.
 
 ```php

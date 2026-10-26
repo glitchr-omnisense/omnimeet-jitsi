@@ -12,7 +12,7 @@
         "jwt",
         "omnimeet"
     ],
-    "homepage": "https://github.com/glitchr-studio/omnimeet-jitsi",
+    "homepage": "https://github.com/glitchr-omnisense/omnimeet-jitsi",
     "license": "MIT",
     "authors": [
         {
@@ -22,7 +22,7 @@
     ],
     "require": {
         "php": ">=8.2",
-        "omniscient/omnimeet": "^1.0@dev"
+        "omnisense/omnimeet": "^1.0@dev"
     },
     "require-dev": {
         "ext-openssl": "*",
