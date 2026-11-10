@@ -25,6 +25,8 @@ final class Api
 {
     public const ENGINE = 'jitsi';
     public const JAAS_DOMAIN = '8x8.vc';
+    /** The public instance 8x8 runs, under its own terms. */
+    public const PUBLIC_DOMAIN = 'meet.jit.si';
 
     public readonly string $domain;
     public readonly ?string $appId;
@@ -197,6 +199,19 @@ final class Api
     public function webhookTolerance(): int
     {
         return max(0, (int) $this->config->get('webhook_tolerance', 300));
+    }
+
+    /**
+     * The usage policy of the instance: meet.jit.si's terms, JaaS's, or, for
+     * any other instance, its operator's (unknown to this package).
+     */
+    public function policyFile(): string
+    {
+        return __DIR__.'/'.match (true) {
+            $this->jaas => 'policy-jaas.json',
+            self::PUBLIC_DOMAIN === preg_replace('~:\d+$~', '', $this->domain) => 'policy-meet-jit-si.json',
+            default => 'policy.json',
+        };
     }
 
     /** The JavaScript that drives the frame, as the package ships it: the application serves this file. */

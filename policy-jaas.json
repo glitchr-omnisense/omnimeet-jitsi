@@ -1,0 +1,38 @@
+{
+    "$schema": "https://github.com/glitchr-omnisense/contracts/blob/1.x/resources/usage-policy.schema.json",
+    "provider": "jitsi:jaas",
+    "rateLimits": null,
+    "concurrency": null,
+    "rights": {
+        "commercial": "contract",
+        "openSourceRequired": null,
+        "caching": {
+            "permission": "unknown",
+            "maxTtl": null
+        },
+        "storage": "unknown",
+        "redistribution": "unknown",
+        "attribution": {
+            "required": false,
+            "text": null,
+            "url": null,
+            "where": []
+        },
+        "licence": null
+    },
+    "requirements": {
+        "key": true,
+        "userAgent": {
+            "required": false,
+            "pattern": null
+        }
+    },
+    "provenance": {
+        "terms": "https://8x8.com/cpaas-order-terms/jaas-module",
+        "policy": "https://cpaas.8x8.com/en/pricing/jitsi-as-a-service-pricing/",
+        "verifiedAt": "2026-11-10",
+        "declaredBy": "maintainer",
+        "contact": null,
+        "notes": "8x8 Jitsi as a Service (8x8.vc): an account and its AppID, an API key whose private key signs each participant's token (key: true) - a contract with 8x8 whatever the plan, hence commercial: contract. Its terms: 8x8's CPaaS Service Module for Jitsi-as-a-Service (last updated 2020-10-27), which defers what it does not define to the CPaaS Service Terms; on 2026-11-10 the module answered 429 to this check and was read through search excerpts only: baseline fees by monthly active users and an 'MAU Overage' paid under the Service Terms. Plans by monthly active users (pricing page, 2026-11-10): Developer free, 25 MAU; Basic $99/month, 300; Standard $499, 1,500; Business $999, 3,000; Enterprise on request, 5,000+; overage $0.99 per MAU; recordings $0.01 a minute. MAUs are people, not calls: no rateLimit expresses them, so rateLimits stays unknown (none published for the IFrame API or the tokens). 8x8's general CPaaS terms (https://cpaas.8x8.com/en/terms-and-conditions/, last updated 2024-09-18) grant a 'limited, non-exclusive, non-transferable, non-sublicenseable' right, forbid to 'market, sell, sublicense, rent, lease, or otherwise distribute the Services' and to use 8x8's name or trademarks without prior written consent; whether they govern a JaaS order was not confirmed, so redistribution stays unknown. No attribution required that the pages say. Webhooks are signed (X-Jaas-Signature) and carry an idempotencyKey, which notify() gives back (Notification::$id)."
+    }
+}

@@ -53,7 +53,8 @@ it reaches (for meet.jit.si, [meet.jit.si Terms of
 Service](https://jitsi.org/meet-jit-si-terms-of-service/); for JaaS, [8x8's JaaS
 terms](https://8x8.com/cpaas-order-terms/jaas-module)), for obtaining whatever they require (an
 account, a key, a licence or subscription, an attribution or a citation, a rate limit to respect),
-and for any use made of what it returns. The authors publish it free of charge, make no commercial
+and for any use made of what it returns. What those terms say is declared as data in
+`policy-meet-jit-si.json`, `policy-jaas.json` and `policy.json` ([docs](docs/index.md#usage-policy)). The authors publish it free of charge, make no commercial
 use of it, and accept no liability for how it is used (see [LICENSE](LICENSE)).
 
 License: MIT since 2026-10-09; earlier versions remain published under LGPL-3.0-or-later.

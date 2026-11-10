@@ -1,0 +1,27 @@
+{
+    "$schema": "https://github.com/glitchr-omnisense/contracts/blob/1.x/resources/usage-policy.schema.json",
+    "provider": "jitsi:meet.jit.si",
+    "rateLimits": null,
+    "concurrency": null,
+    "rights": {
+        "commercial": "contract",
+        "openSourceRequired": null,
+        "caching": {"permission": "unknown", "maxTtl": null},
+        "storage": "unknown",
+        "redistribution": "unknown",
+        "attribution": {"required": true, "text": null, "url": "https://meet.jit.si/", "where": ["display"]},
+        "licence": null
+    },
+    "requirements": {
+        "key": false,
+        "userAgent": {"required": false, "pattern": null}
+    },
+    "provenance": {
+        "terms": "https://jitsi.org/meet-jit-si-terms-of-service/",
+        "policy": "https://jitsi.org/jaas/",
+        "verifiedAt": "2026-11-10",
+        "declaredBy": "maintainer",
+        "contact": null,
+        "notes": "8x8's terms of service for meet.jit.si (updated 2020-10-26, effective 2020-10-19), section 3: use at no cost is 'limited to a maximum aggregate total of 25 Active End Points per calendar month', beyond which 8x8 may restrict the use or require a paid service; 'reasonable use at commercially acceptable volumes'; 8x8 'offers paid services designed to meet the needs of business users' - hence commercial: contract. Active end points are not calls: no rateLimit expresses them (the schema has no such unit), so rateLimits stays unknown. Branding: one may not 'remove, obscure, modify, or alter any branding, logos, and/or legal notices displayed in or along with the Service', and an integration for third-party users must let the branding be viewed and interacted with for at least 15 seconds (attribution: the service's own branding, shown in the frame; no text to add). Embedding: jitsi.org/jaas says embedding meet.jit.si 'used to be possible on meet.jit.si, it is no longer the case' - JaaS is the way to embed; set embed: false to send people to the address instead. Since 2023-08-24 (jitsi.org/blog/authentication-on-meet-jit-si/) creating a room on meet.jit.si needs a sign-in (Google, GitHub, Facebook) by the first participant, in the browser: the package signs no token for it. No caching nor storage rule applies to what this package keeps (a room's name); the service is 'not intended to... be used for back-up or long-term storage of data'. No rate limit published."
+    }
+}

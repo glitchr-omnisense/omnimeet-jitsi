@@ -10,7 +10,8 @@
         "jitsi-meet",
         "jaas",
         "jwt",
-        "omnimeet"
+        "omnimeet",
+        "usage-policy"
     ],
     "homepage": "https://github.com/glitchr-omnisense/omnimeet-jitsi",
     "license": "MIT",
@@ -26,6 +27,7 @@
     },
     "require-dev": {
         "ext-openssl": "*",
+        "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.0"
     },
     "suggest": {
@@ -42,6 +44,18 @@
     "autoload-dev": {
         "psr-4": {
             "Omnimeet\\Jitsi\\Tests\\": "Tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-1.x": "1.x-dev"
+        },
+        "omnisense": {
+            "policies": [
+                "policy.json",
+                "policy-meet-jit-si.json",
+                "policy-jaas.json"
+            ]
         }
     },
     "config": {

@@ -46,6 +46,10 @@ use Omnimeet\Model\Capabilities;
  * room and reading its state from the server (close(), fetch()) - the page
  * of a moderator ends the conference through the IFrame API instead - and
  * callbacks outside JaaS (notify() needs webhook_secret).
+ *
+ * Its usage policy is the instance's (Api::policyFile()): meet.jit.si's
+ * terms (policy-meet-jit-si.json), JaaS's (policy-jaas.json), or, for any
+ * other instance, its operator's, unknown here (policy.json).
  */
 final class JitsiGatewayFactory extends GatewayFactory
 {
@@ -83,6 +87,7 @@ final class JitsiGatewayFactory extends GatewayFactory
                 access: $c['embed'] ? [AccessKind::FRAME, AccessKind::LINK] : [AccessKind::LINK],
             ),
             'omnimeet.api' => static fn (Config $c) => new Api($c),
+            'omnimeet.policy' => static fn (Config $c) => (new Api($c))->policyFile(),
             'omnimeet.action.open' => new OpenAction(),
             'omnimeet.action.join' => new JoinAction(),
             // A callback can only be checked with JaaS's signing secret: without one the gateway hears none.

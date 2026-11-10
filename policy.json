@@ -1,0 +1,27 @@
+{
+    "$schema": "https://github.com/glitchr-omnisense/contracts/blob/1.x/resources/usage-policy.schema.json",
+    "provider": "jitsi",
+    "rateLimits": null,
+    "concurrency": null,
+    "rights": {
+        "commercial": "unknown",
+        "openSourceRequired": null,
+        "caching": {"permission": "unknown", "maxTtl": null},
+        "storage": "unknown",
+        "redistribution": "unknown",
+        "attribution": {"required": false, "text": null, "url": null, "where": []},
+        "licence": null
+    },
+    "requirements": {
+        "key": false,
+        "userAgent": {"required": false, "pattern": null}
+    },
+    "provenance": {
+        "terms": null,
+        "policy": null,
+        "verifiedAt": "2026-11-10",
+        "declaredBy": "maintainer",
+        "contact": null,
+        "notes": "A Jitsi Meet instance other than meet.jit.si and 8x8's JaaS (8x8.vc), which have policies of their own (policy-meet-jit-si.json, policy-jaas.json; the gateway picks one by its domain). Its terms are its operator's, unknown to this package: an instance of one's own has none but the site's, a public one (a community's, a university's) has its own. Jitsi Meet itself is Apache-2.0 software; nothing here limits what the instance carries. The site declares what it knows through its tightening."
+    }
+}

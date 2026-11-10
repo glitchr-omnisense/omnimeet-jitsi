@@ -284,3 +284,23 @@ runs it is responsible for complying with that instance's terms (for meet.jit.si
 [meet.jit.si Terms of Service](https://jitsi.org/meet-jit-si-terms-of-service/); for JaaS,
 [8x8's JaaS terms](https://8x8.com/cpaas-order-terms/jaas-module)) and for what is done with what it
 returns; see the README's Responsibility section.
+
+## Usage policy
+
+Three files, in omnisense/contracts' schema (verified 2026-11-10), the gateway taking the one of its
+`domain` (`Api::policyFile()`):
+
+- `policy-meet-jit-si.json` - [meet.jit.si's terms](https://jitsi.org/meet-jit-si-terms-of-service/):
+  commercial use under contract (8x8's paid services; 25 active end points a calendar month at no
+  cost, not expressible as a call limit, so the limits stay unknown), its branding never removed
+  nor hidden (an integration shows it at least 15 seconds), no embedding any more
+  ([jitsi.org/jaas](https://jitsi.org/jaas/): use `embed: false`, or JaaS), a sign-in to create a
+  room since 2023-08-24;
+- `policy-jaas.json` - [8x8's JaaS module](https://8x8.com/cpaas-order-terms/jaas-module) and
+  [pricing](https://cpaas.8x8.com/en/pricing/jitsi-as-a-service-pricing/): an account and a key, a
+  contract whatever the plan, plans by monthly active users (Developer 25 free; 300, 1,500, 3,000,
+  5,000+), no call limit published;
+- `policy.json` - any other instance: its operator's terms, unknown here.
+
+Nothing is created at the instance: opening a meeting names its room, so it is never made twice.
+
