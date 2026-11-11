@@ -25,6 +25,7 @@ final class NotifyTest extends TestCase
     private function gateway(int $tolerance = 300): GatewayInterface
     {
         $pair = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => \OPENSSL_KEYTYPE_RSA]);
+        self::assertNotFalse($pair);
         openssl_pkey_export($pair, $private);
 
         return (new JitsiGatewayFactory())->create(['domain' => '8x8.vc', 'app_id' => self::APP, 'private_key' => $private, 'key_id' => self::APP.'/k', 'webhook_secret' => self::SECRET, 'webhook_tolerance' => $tolerance]);
@@ -40,7 +41,7 @@ final class NotifyTest extends TestCase
     private static function joined(): string
     {
         // The fields of the documentation's PARTICIPANT_JOINED example, every identifier replaced by a made-up one.
-        return json_encode([
+        return (string) json_encode([
             'idempotencyKey' => 'idempotency-key-of-the-test-1',
             'customerId' => '00000000000000000000000000000000',
             'appId' => self::APP,
@@ -72,7 +73,9 @@ final class NotifyTest extends TestCase
         self::assertSame(Event::JOINED, $notification->event);
         self::assertSame('PARTICIPANT_JOINED', $notification->type);
         self::assertSame('testroom2', $notification->reference, 'the room as open() named it, without the AppID');
+        self::assertNotNull($notification->participant);
         self::assertSame(['uniqueUserIdentifier', Role::HOST, 'John Doe'], [$notification->participant->id, $notification->participant->role, $notification->participant->name], 'the id the token carried');
+        self::assertNotNull($notification->at);
         self::assertSame('2020-09-24 12:50:18', $notification->at->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s'), 'milliseconds');
         self::assertSame('idempotency-key-of-the-test-1', $notification->id, 'what a callback sent twice is recognised by');
         self::assertSame('session-of-the-test-1', $notification->data['sessionId']);
@@ -81,12 +84,14 @@ final class NotifyTest extends TestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('events')]
     public function testEachEventIsReadAsWhatItMeans(string $type, Event $event): void
     {
-        $body = json_encode(['idempotencyKey' => 'k', 'appId' => self::APP, 'eventType' => $type, 'timestamp' => 1600952155289, 'fqn' => self::APP.'/testroom2', 'data' => ['conference' => 'testroom2@conference.'.self::APP.'.stage.8x8.vc', 'preAuthenticatedLink' => 'https://objectstorage.example/rec.mp4']]);
+        $body = (string) json_encode(['idempotencyKey' => 'k', 'appId' => self::APP, 'eventType' => $type, 'timestamp' => 1600952155289, 'fqn' => self::APP.'/testroom2', 'data' => ['conference' => 'testroom2@conference.'.self::APP.'.stage.8x8.vc', 'preAuthenticatedLink' => 'https://objectstorage.example/rec.mp4']]);
         $notification = $this->gateway(0)->notify($body, ['X-Jaas-Signature' => self::signature($body, 1600952155)]);
 
         self::assertSame([$event, $type, 'testroom2'], [$notification->event, $notification->type, $notification->reference]);
         self::assertNull($notification->participant);
-        self::assertSame('https://objectstorage.example/rec.mp4', $notification->data['data']['preAuthenticatedLink']);
+        $data = $notification->data['data'];
+        self::assertIsArray($data);
+        self::assertSame('https://objectstorage.example/rec.mp4', $data['preAuthenticatedLink']);
     }
 
     /** @return iterable<string, array{string, Event}> */

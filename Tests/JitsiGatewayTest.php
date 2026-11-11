@@ -6,6 +6,7 @@ use Omnimeet\Exception\InvalidConfigException;
 use Omnimeet\Exception\NotSupportedException;
 use Omnimeet\Jitsi\JitsiGatewayFactory;
 use Omnimeet\Jitsi\Jwt;
+use Omnimeet\Model\Access;
 use Omnimeet\Model\AccessKind;
 use Omnimeet\Model\Meeting;
 use Omnimeet\Model\Participant;
@@ -27,6 +28,59 @@ final class JitsiGatewayTest extends TestCase
     private function meeting(): Meeting
     {
         return new Meeting('a-key-nobody-guesses', new \DateTimeImmutable('+5 minutes'), new \DateTimeImmutable('+35 minutes'), 'Consultation');
+    }
+
+    /** When the meeting ends, as a timestamp. */
+    private static function end(Meeting $meeting): int
+    {
+        self::assertNotNull($meeting->endsAt);
+
+        return $meeting->endsAt->getTimestamp();
+    }
+
+    /** The token an access carries. */
+    private static function jwt(Access $access): string
+    {
+        $token = $access->options['jwt'] ?? null;
+        self::assertIsString($token);
+
+        return $token;
+    }
+
+    /** @return array<string, mixed> the claims of a token whose signature holds */
+    private static function claims(string $token, string $key): array
+    {
+        $claims = Jwt::verify($token, $key);
+        self::assertNotNull($claims);
+
+        return $claims;
+    }
+
+    /** @param array<mixed> $values */
+    private static function at(array $values, string ...$keys): mixed
+    {
+        $value = $values;
+        foreach ($keys as $key) {
+            self::assertIsArray($value);
+            self::assertArrayHasKey($key, $value);
+            $value = $value[$key];
+        }
+
+        return $value;
+    }
+
+    /** @return array{string, string} a private key and its public key, in PEM */
+    private static function keyPair(): array
+    {
+        $pair = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => \OPENSSL_KEYTYPE_RSA]);
+        self::assertNotFalse($pair);
+        openssl_pkey_export($pair, $private);
+        self::assertIsString($private);
+        $details = openssl_pkey_get_details($pair);
+        self::assertIsArray($details);
+        self::assertIsString($details['key']);
+
+        return [$private, $details['key']];
     }
 
     public function testAnOpenInstanceIsEnteredByTheRoomsNameAlone(): void
@@ -98,7 +152,7 @@ final class JitsiGatewayTest extends TestCase
         $meeting = $gateway->open($this->meeting());
         self::assertStringStartsWith('cabinet-', $meeting->reference());
         $access = $gateway->join($meeting, Participant::host('u42', 'Dr Claire Tilleul'));
-        $token = $access->options['jwt'];
+        $token = self::jwt($access);
 
         self::assertSame(['typ' => 'JWT', 'alg' => 'HS256'], Jwt::header($token), 'shared secret validation');
         $claims = Jwt::verify($token, 'my_app_secret');
@@ -106,12 +160,12 @@ final class JitsiGatewayTest extends TestCase
         self::assertSame(['aud', 'iss', 'sub', 'room', 'exp', 'context'], array_keys($claims));
         self::assertSame(['jitsi', 'my_app', 'meet.example.org', $meeting->reference], [$claims['aud'], $claims['iss'], $claims['sub'], $claims['room']], 'the application, the domain, this room and no other');
         self::assertSame(['user' => ['id' => 'u42', 'name' => 'Dr Claire Tilleul']], $claims['context'], 'display information: strings only, no e-mail, no avatar');
-        self::assertSame($meeting->endsAt->getTimestamp() + 300, $claims['exp'], 'lapses a while after the meeting\'s end');
-        self::assertSame($claims['exp'], $access->expiresAt->getTimestamp());
-        self::assertStringStartsWith('https://meet.example.org/'.$meeting->reference.'?jwt='.$token.'#config.', $access->url, 'the token as the jwt parameter');
+        self::assertSame(self::end($meeting) + 300, $claims['exp'], 'lapses a while after the meeting\'s end');
+        self::assertSame($claims['exp'], $access->expiresAt?->getTimestamp());
+        self::assertStringStartsWith('https://meet.example.org/'.$meeting->reference.'?jwt='.$token.'#config.', (string) $access->url, 'the token as the jwt parameter');
 
-        $guest = Jwt::verify($gateway->join($meeting, Participant::guest('u7'))->options['jwt'], 'my_app_secret');
-        self::assertSame(['id' => 'u7'], $guest['context']['user'], 'no name when the application gives none');
+        $guest = self::claims(self::jwt($gateway->join($meeting, Participant::guest('u7'))), 'my_app_secret');
+        self::assertSame(['id' => 'u7'], self::at($guest, 'context', 'user'), 'no name when the application gives none');
     }
 
     public function testAudienceIssuerSubjectAndLifetimeFollowTheInstance(): void
@@ -122,19 +176,17 @@ final class JitsiGatewayTest extends TestCase
         ]);
         $meeting = $gateway->open(new Meeting('k'));
         $access = $gateway->join($meeting, Participant::guest('u7'));
-        $claims = Jwt::verify($access->options['jwt'], 's');
+        $claims = self::claims(self::jwt($access), 's');
 
         self::assertSame(['my_server', 'my_web_client', 'tenant1'], [$claims['aud'], $claims['iss'], $claims['sub']]);
         self::assertEqualsWithDelta(time() + 900, $claims['exp'], 5, 'a meeting without an end: token_ttl');
         self::assertSame('https://meet.example.org:8443/external_api.js', $access->options['api']);
-        self::assertSame('meet.example.org', Jwt::verify((new JitsiGatewayFactory())->create(['domain' => 'meet.example.org:8443', 'app_id' => 'a', 'app_secret' => 's'])->join($meeting, Participant::guest('u'))->options['jwt'], 's')['sub'], 'the domain without its port');
+        self::assertSame('meet.example.org', self::at(self::claims(self::jwt((new JitsiGatewayFactory())->create(['domain' => 'meet.example.org:8443', 'app_id' => 'a', 'app_secret' => 's'])->join($meeting, Participant::guest('u'))), 's'), 'sub'), 'the domain without its port');
     }
 
     public function testJitsiAsAServiceHasItsOwnClaimsRoomsAndScript(): void
     {
-        $pair = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => \OPENSSL_KEYTYPE_RSA]);
-        openssl_pkey_export($pair, $private);
-        $public = openssl_pkey_get_details($pair)['key'];
+        [$private, $public] = self::keyPair();
         // Made up, in the shape of a JaaS AppID: not an account.
         $appId = 'vpaas-magic-cookie-00000000000000000000000000000000';
 
@@ -145,16 +197,16 @@ final class JitsiGatewayTest extends TestCase
         $access = $gateway->join($meeting, Participant::host('u42', 'Dr Claire Tilleul'));
         self::assertSame('https://8x8.vc/'.$appId.'/external_api.js', $access->options['api']);
         self::assertSame($appId.'/'.$meeting->reference, $access->options['room'], '"<AppID>/<room>"');
-        self::assertStringStartsWith('https://8x8.vc/'.$appId.'/'.$meeting->reference.'?jwt=', $access->url);
+        self::assertStringStartsWith('https://8x8.vc/'.$appId.'/'.$meeting->reference.'?jwt=', (string) $access->url);
 
-        $token = $access->options['jwt'];
+        $token = self::jwt($access);
         self::assertSame(['typ' => 'JWT', 'alg' => 'RS256', 'kid' => $appId.'/test-key'], Jwt::header($token));
-        $claims = Jwt::verify($token, $public);
+        $claims = self::claims($token, $public);
         self::assertSame(['jitsi', 'chat', $appId, $meeting->reference], [$claims['aud'], $claims['iss'], $claims['sub'], $claims['room']], 'aud and iss are JaaS\'s constants, sub the AppID');
         self::assertLessThanOrEqual(time(), $claims['nbf']);
-        self::assertSame(['id' => 'u42', 'name' => 'Dr Claire Tilleul', 'moderator' => 'true'], $claims['context']['user'], 'moderator as a string');
-        self::assertSame(['recording' => true], $claims['context']['features']);
-        self::assertSame('false', Jwt::verify($gateway->join($meeting, Participant::guest('u7'))->options['jwt'], $public)['context']['user']['moderator']);
+        self::assertSame(['id' => 'u42', 'name' => 'Dr Claire Tilleul', 'moderator' => 'true'], self::at($claims, 'context', 'user'), 'moderator as a string');
+        self::assertSame(['recording' => true], self::at($claims, 'context', 'features'));
+        self::assertSame('false', self::at(self::claims(self::jwt($gateway->join($meeting, Participant::guest('u7'))), $public), 'context', 'user', 'moderator'));
     }
 
     public function testRoomSecretKeepsAGuessableKeyFromNamingTheRoom(): void
@@ -174,7 +226,7 @@ final class JitsiGatewayTest extends TestCase
 
         self::assertSame(['prejoinConfig' => ['enabled' => false], 'toolbarButtons' => ['microphone', 'camera']], $access->options['config']);
         self::assertSame(['TILE_VIEW_MAX_COLUMNS' => 2], $access->options['interfaceConfig']);
-        self::assertStringEndsWith('#config.prejoinConfig.enabled=false&config.toolbarButtons=%5B%22microphone%22%2C%22camera%22%5D', $access->url);
+        self::assertStringEndsWith('#config.prejoinConfig.enabled=false&config.toolbarButtons=%5B%22microphone%22%2C%22camera%22%5D', (string) $access->url);
         self::assertArrayNotHasKey('jwt', $access->options);
         self::assertArrayNotHasKey('name', $access->options);
     }
@@ -190,7 +242,7 @@ final class JitsiGatewayTest extends TestCase
         self::assertStringStartsWith('https://meet.example.org/'.$meeting->reference.'?jwt=', (string) $access->url);
         self::assertNull($access->script, 'nothing to drive');
         self::assertSame(['https://meet.example.org'], $access->origins);
-        self::assertSame($meeting->endsAt->getTimestamp() + 300, $access->expiresAt->getTimestamp());
+        self::assertSame(self::end($meeting) + 300, $access->expiresAt?->getTimestamp());
     }
 
     /** @param array<string, mixed> $options */

@@ -83,7 +83,7 @@ final class JitsiGatewayFactory extends GatewayFactory
                 recording: true === (((array) $c['features'])['recording'] ?? false),
                 screenSharing: true,
                 chat: true,
-                tokens: '' !== (string) $c['app_secret'] || '' !== (string) $c['private_key'],
+                tokens: '' !== self::text($c['app_secret']) || '' !== self::text($c['private_key']),
                 access: $c['embed'] ? [AccessKind::FRAME, AccessKind::LINK] : [AccessKind::LINK],
             ),
             'omnimeet.api' => static fn (Config $c) => new Api($c),
@@ -91,7 +91,13 @@ final class JitsiGatewayFactory extends GatewayFactory
             'omnimeet.action.open' => new OpenAction(),
             'omnimeet.action.join' => new JoinAction(),
             // A callback can only be checked with JaaS's signing secret: without one the gateway hears none.
-            'omnimeet.action.notify' => static fn (Config $c) => '' !== (string) $c['webhook_secret'] ? new NotifyAction() : null,
+            'omnimeet.action.notify' => static fn (Config $c) => '' !== self::text($c['webhook_secret']) ? new NotifyAction() : null,
         ]);
+    }
+
+    /** An option as a string, as Api reads it ("" for anything a cast cannot read but a Stringable). */
+    private static function text(mixed $value): string
+    {
+        return \is_scalar($value) || null === $value || $value instanceof \Stringable ? (string) $value : '';
     }
 }

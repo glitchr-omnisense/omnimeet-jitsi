@@ -34,19 +34,19 @@ final class Api
 
     public function __construct(private readonly Config $config)
     {
-        $domain = strtolower(trim((string) $config['domain']));
+        $domain = strtolower(trim(self::text($config['domain'])));
         $domain = (string) preg_replace('~^https?://~', '', rtrim($domain, '/'));
         if (!preg_match('~^[a-z0-9.-]+(?::\d+)?$~', $domain)) {
-            throw new InvalidConfigException(\sprintf('The jitsi gateway\'s domain is a host name ("meet.example.org"), not "%s".', $config['domain']));
+            throw new InvalidConfigException(\sprintf('The jitsi gateway\'s domain is a host name ("meet.example.org"), not "%s".', self::text($config['domain'])));
         }
         $this->domain = $domain;
-        $appId = trim((string) $config->get('app_id', ''));
+        $appId = trim(self::text($config->get('app_id', '')));
         $this->appId = '' === $appId ? null : $appId;
         $this->jaas = (bool) ($config->get('jaas') ?? (self::JAAS_DOMAIN === $domain || str_starts_with($appId, 'vpaas-magic-cookie-')));
         if ($this->jaas && (null === $this->appId || !$this->hasKeyPair())) {
             throw new InvalidConfigException('Jitsi as a Service needs app_id (the AppID), private_key and key_id (the API key uploaded in its console).');
         }
-        if ($this->hasKeyPair() && '' === (string) $config->get('key_id', '')) {
+        if ($this->hasKeyPair() && '' === self::text($config->get('key_id', ''))) {
             throw new InvalidConfigException('A token signed with a private key names its public key: the jitsi gateway\'s key_id.');
         }
         if ($this->hasSecret() && null === $this->appId) {
@@ -67,10 +67,10 @@ final class Api
      */
     public function room(Meeting $meeting): string
     {
-        $secret = (string) $this->config->get('room_secret', '');
+        $secret = self::text($this->config->get('room_secret', ''));
         $digest = '' === $secret ? hash('sha256', 'omnimeet:'.$meeting->key) : hash_hmac('sha256', $meeting->key, $secret);
 
-        return strtolower((string) $this->config->get('room_prefix', '')).substr($digest, 0, 32);
+        return strtolower(self::text($this->config->get('room_prefix', ''))).substr($digest, 0, 32);
     }
 
     /** The room as the IFrame API and the address name it: under the AppID on JaaS. */
@@ -106,7 +106,7 @@ final class Api
         $overrides = $this->configOverwrite($locale);
         $fragment = [];
         foreach (self::flatten($overrides) as $key => $value) {
-            $fragment[] = 'config.'.$key.'='.rawurlencode(json_encode($value, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE));
+            $fragment[] = 'config.'.$key.'='.rawurlencode((string) json_encode($value, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE));
         }
 
         return $this->origin().'/'.$this->roomName($reference)
@@ -117,20 +117,20 @@ final class Api
     /** @return array<string, mixed> config.js overrides: the configured ones, and the participant's language */
     public function configOverwrite(?string $locale = null): array
     {
-        return (array) $this->config->get('config', []) + (null !== $locale && '' !== $locale ? ['defaultLanguage' => $locale] : []);
+        return self::map($this->config->get('config', [])) + (null !== $locale && '' !== $locale ? ['defaultLanguage' => $locale] : []);
     }
 
     /** @return array<string, mixed> */
     public function interfaceConfigOverwrite(): array
     {
-        return (array) $this->config->get('interface_config', []);
+        return self::map($this->config->get('interface_config', []));
     }
 
     /** When a token made now for this meeting lapses: a while after the meeting's end, or token_ttl seconds from now. */
     public function expiry(Meeting $meeting, ?int $now = null): int
     {
         $now ??= time();
-        $ttl = max(60, (int) $this->config->get('token_ttl', 7200));
+        $ttl = max(60, self::integer($this->config->get('token_ttl', 7200)));
 
         return null !== $meeting->endsAt && $meeting->endsAt->getTimestamp() > $now ? $meeting->endsAt->getTimestamp() + 300 : $now + $ttl;
     }
@@ -169,9 +169,9 @@ final class Api
             ];
         } else {
             $claims = [
-                'aud' => (string) ($this->config->get('audience') ?: 'jitsi'),
-                'iss' => (string) ($this->config->get('issuer') ?: $this->appId),
-                'sub' => (string) ($this->config->get('subject') ?: preg_replace('~:\d+$~', '', $this->domain)),
+                'aud' => self::text($this->config->get('audience') ?: 'jitsi'),
+                'iss' => self::text($this->config->get('issuer') ?: $this->appId),
+                'sub' => self::text($this->config->get('subject') ?: preg_replace('~:\d+$~', '', $this->domain)),
                 'room' => $room,
                 'exp' => $this->expiry($meeting, $now),
                 'context' => ['user' => $user],
@@ -179,8 +179,8 @@ final class Api
         }
 
         return $this->hasKeyPair()
-            ? Jwt::sign($claims, (string) $this->config['private_key'], Jwt::RS256, (string) $this->config['key_id'])
-            : Jwt::sign($claims, (string) $this->config['app_secret'], Jwt::HS256);
+            ? Jwt::sign($claims, self::text($this->config['private_key']), Jwt::RS256, self::text($this->config['key_id']))
+            : Jwt::sign($claims, self::text($this->config['app_secret']), Jwt::HS256);
     }
 
     /** Whether the instance may be shown in a frame: some forbid it (X-Frame-Options, frame-ancestors). */
@@ -191,14 +191,14 @@ final class Api
 
     public function webhookSecret(): ?string
     {
-        $secret = (string) $this->config->get('webhook_secret', '');
+        $secret = self::text($this->config->get('webhook_secret', ''));
 
         return '' === $secret ? null : $secret;
     }
 
     public function webhookTolerance(): int
     {
-        return max(0, (int) $this->config->get('webhook_tolerance', 300));
+        return max(0, self::integer($this->config->get('webhook_tolerance', 300)));
     }
 
     /**
@@ -222,18 +222,18 @@ final class Api
 
     private function hasSecret(): bool
     {
-        return '' !== (string) $this->config->get('app_secret', '');
+        return '' !== self::text($this->config->get('app_secret', ''));
     }
 
     private function hasKeyPair(): bool
     {
-        return '' !== (string) $this->config->get('private_key', '');
+        return '' !== self::text($this->config->get('private_key', ''));
     }
 
     /**
      * {prejoinConfig: {enabled: false}} -> {"prejoinConfig.enabled": false}; a list stays a value.
      *
-     * @param array<string, mixed> $values
+     * @param array<mixed> $values
      *
      * @return array<string, mixed>
      */
@@ -249,5 +249,32 @@ final class Api
         }
 
         return $flat;
+    }
+
+    /** An option as a string, as a cast gives it ("" for anything a cast cannot read but a Stringable). */
+    private static function text(mixed $value): string
+    {
+        return \is_scalar($value) || null === $value || $value instanceof \Stringable ? (string) $value : '';
+    }
+
+    /** An option as an int, as a cast gives it (an array: 0 when empty, 1 otherwise; an object 1). */
+    private static function integer(mixed $value): int
+    {
+        return \is_scalar($value) || null === $value || \is_array($value) ? (int) $value : 1;
+    }
+
+    /**
+     * An option of overrides as a map (a scalar as a cast gives it: [0 => value]).
+     *
+     * @return array<string, mixed>
+     */
+    private static function map(mixed $value): array
+    {
+        $map = [];
+        foreach ((array) $value as $key => $one) {
+            $map[(string) $key] = $one;
+        }
+
+        return $map;
     }
 }

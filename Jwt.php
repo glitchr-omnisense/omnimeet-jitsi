@@ -49,7 +49,7 @@ final class Jwt
         }
         $header = json_decode(self::decode($parts[0]), true);
         $signature = self::decode($parts[2]);
-        $valid = match ($header['alg'] ?? null) {
+        $valid = match (\is_array($header) ? $header['alg'] ?? null : null) {
             self::HS256 => hash_equals(hash_hmac('sha256', $parts[0].'.'.$parts[1], $key, true), $signature),
             self::RS256 => \function_exists('openssl_verify') && 1 === openssl_verify($parts[0].'.'.$parts[1], $signature, $key, \OPENSSL_ALGO_SHA256),
             default => false,
@@ -70,7 +70,12 @@ final class Jwt
     /** @return array<string, mixed> the header of a token, unchecked */
     public static function header(string $token): array
     {
-        return (array) json_decode(self::decode(explode('.', $token)[0]), true);
+        $header = [];
+        foreach ((array) json_decode(self::decode(explode('.', $token)[0]), true) as $name => $value) {
+            $header[(string) $name] = $value;
+        }
+
+        return $header;
     }
 
     private static function rsa(string $input, #[\SensitiveParameter] string $key): string
@@ -80,7 +85,7 @@ final class Jwt
         }
         $pem = str_contains($key, '-----BEGIN') ? $key : (is_file($key) ? (string) file_get_contents($key) : '');
         $private = '' === $pem ? false : openssl_pkey_get_private($pem);
-        if (false === $private || !openssl_sign($input, $signature, $private, \OPENSSL_ALGO_SHA256)) {
+        if (false === $private || !openssl_sign($input, $signature, $private, \OPENSSL_ALGO_SHA256) || !\is_string($signature)) {
             throw new InvalidConfigException('The private key of the jitsi gateway cannot be read: a PEM, or the path of its file.');
         }
 

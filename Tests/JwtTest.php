@@ -24,17 +24,24 @@ final class JwtTest extends TestCase
     public function testRs256IsSignedWithAPrivateKeyAndNamesItsPublicKey(): void
     {
         $pair = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => \OPENSSL_KEYTYPE_RSA]);
+        self::assertNotFalse($pair);
         openssl_pkey_export($pair, $private);
-        $public = openssl_pkey_get_details($pair)['key'];
+        self::assertIsString($private);
+        $details = openssl_pkey_get_details($pair);
+        self::assertIsArray($details);
+        $public = $details['key'];
+        self::assertIsString($public);
 
         $token = Jwt::sign(['room' => 'r', 'context' => ['user' => ['name' => 'Camille Érable']]], $private, Jwt::RS256, 'app/key1');
         self::assertSame(['typ' => 'JWT', 'alg' => 'RS256', 'kid' => 'app/key1'], Jwt::header($token));
-        self::assertSame('Camille Érable', Jwt::verify($token, $public)['context']['user']['name']);
+        $claims = Jwt::verify($token, $public);
+        self::assertNotNull($claims);
+        self::assertSame(['user' => ['name' => 'Camille Érable']], $claims['context']);
 
         $file = tempnam(sys_get_temp_dir(), 'omnimeet');
         file_put_contents($file, $private);
         try {
-            self::assertSame('r', Jwt::verify(Jwt::sign(['room' => 'r'], $file, Jwt::RS256, 'k'), $public)['room'], 'the key by the path of its file');
+            self::assertSame(['room' => 'r'], Jwt::verify(Jwt::sign(['room' => 'r'], $file, Jwt::RS256, 'k'), $public), 'the key by the path of its file');
         } finally {
             unlink($file);
         }
