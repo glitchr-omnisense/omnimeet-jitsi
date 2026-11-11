@@ -34,7 +34,8 @@ final class Jwt
 
     /**
      * The claims of a token this side signed, or null when the signature
-     * does not hold: for tests, and for whoever wants to check what is sent.
+     * does not hold (or when its claims are not an object): for tests, and
+     * for whoever wants to check what is sent.
      *
      * @param string $key the shared secret (HS256), or the public key in PEM (RS256)
      *
@@ -54,7 +55,16 @@ final class Jwt
             default => false,
         };
 
-        return $valid ? json_decode(self::decode($parts[1]), true) : null;
+        $claims = $valid ? json_decode(self::decode($parts[1]), true) : null;
+        if (!\is_array($claims)) {
+            return null;
+        }
+        $named = [];
+        foreach ($claims as $name => $value) {
+            $named[(string) $name] = $value;
+        }
+
+        return $named;
     }
 
     /** @return array<string, mixed> the header of a token, unchecked */

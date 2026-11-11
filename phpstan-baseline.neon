@@ -67,12 +67,6 @@ parameters:
 			path: Jwt.php
 
 		-
-			message: '#^Method Omnimeet\\Jitsi\\Jwt\:\:verify\(\) should return array\<string, mixed\>\|null but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: Jwt.php
-
-		-
 			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
 			identifier: binaryOp.invalid
 			count: 1
