@@ -260,7 +260,8 @@ and makes a throwaway RSA key for the JaaS gateway)
   cannot be read, or no openssl extension, for RS256; a meeting without a reference.
 - `InvalidNotificationException` (`notify()`): no `webhook_secret`, no `X-Jaas-Signature`, a
   signature that does not hold, a timestamp further than `webhook_tolerance` from now, a body that
-  is not a JaaS event.
+  is not a JaaS event (no `eventType`, or an `eventType`, `fqn`, `idempotencyKey`, `data.id` or
+  `data.name` that is not a string or a number, a `timestamp` that is not a number).
 - `NotSupportedException`: `close()`, `fetch()`, and `notify()` without `webhook_secret`.
 
 ## Verified, and not

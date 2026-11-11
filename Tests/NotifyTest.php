@@ -121,6 +121,39 @@ final class NotifyTest extends TestCase
         yield 'signed, not an event' => ['[1]', ['X-Jaas-Signature' => self::signature('[1]')], 'not a JaaS event'];
     }
 
+    /**
+     * A callback signed but carrying a field of another type - the room, the
+     * time, the key it is deduplicated on, the participant - is refused: never
+     * read as the room "Array", 1970 or one participant for another.
+     */
+    public function testACallbackWithAFieldOfAnotherTypeIsRefused(): void
+    {
+        $joined = json_decode(self::joined(), true);
+        self::assertIsArray($joined);
+        $data = $joined['data'];
+        self::assertIsArray($data);
+        $cases = [
+            'eventType' => ['eventType' => ['PARTICIPANT_JOINED']],
+            'fqn' => ['fqn' => [self::APP.'/testroom2']],
+            'fqn true' => ['fqn' => true],
+            'timestamp' => ['timestamp' => 'soon'],
+            'timestamp a list' => ['timestamp' => [1600951818143]],
+            'idempotencyKey' => ['idempotencyKey' => ['idempotency-key-of-the-test-1']],
+            'data.id' => ['data' => ['id' => ['uniqueUserIdentifier']] + $data],
+            'data.name' => ['data' => ['name' => ['John Doe']] + $data],
+        ];
+        $gateway = $this->gateway(0);
+        foreach ($cases as $case => $fields) {
+            $body = (string) json_encode($fields + $joined, \JSON_UNESCAPED_SLASHES);
+            try {
+                $gateway->notify($body, ['X-Jaas-Signature' => self::signature($body)]);
+                self::fail($case.' of another type was read.');
+            } catch (InvalidNotificationException $e) {
+                self::assertStringContainsString('not a JaaS event', $e->getMessage(), $case);
+            }
+        }
+    }
+
     public function testTheDocumentationsOwnSignatureFormat(): void
     {
         // "t=<a Unix timestamp>,v1=<the base64 of 32 bytes>": the header as JaaS's documentation shows it.

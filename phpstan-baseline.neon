@@ -3,24 +3,6 @@ parameters:
 		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
-			count: 1
-			path: Action/NotifyAction.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 6
-			path: Action/NotifyAction.php
-
-		-
-			message: '#^Parameter \#7 \$data of class Omnimeet\\Model\\Notification constructor expects array\<string, mixed\>, array\<mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Action/NotifyAction.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
 			count: 2
 			path: Api.php
 

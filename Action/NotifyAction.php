@@ -75,24 +75,50 @@ final class NotifyAction implements ActionInterface, ApiAwareInterface
             throw new InvalidNotificationException('jitsi', 'The callback is not a JaaS event.');
         }
         $data = \is_array($payload['data'] ?? null) ? $payload['data'] : [];
-        $type = (string) $payload['eventType'];
+        $type = (string) self::field($payload, 'eventType');
         $event = self::EVENTS[$type] ?? Event::OTHER;
 
         $participant = null;
-        if (\in_array($event, [Event::JOINED, Event::LEFT], true) && isset($data['id']) && '' !== (string) $data['id']) {
+        if (\in_array($event, [Event::JOINED, Event::LEFT], true) && null !== ($id = self::field($data, 'id', 'data.id')) && '' !== $id) {
             // The id the token carried (context.user.id): the application's own, opaque.
-            $participant = new Participant((string) $data['id'], 'true' === ($data['moderator'] ?? null) || true === ($data['moderator'] ?? null) ? Role::HOST : Role::GUEST, isset($data['name']) ? (string) $data['name'] : null);
+            $participant = new Participant($id, 'true' === ($data['moderator'] ?? null) || true === ($data['moderator'] ?? null) ? Role::HOST : Role::GUEST, self::field($data, 'name', 'data.name'));
+        }
+        $fqn = self::field($payload, 'fqn');
+        $timestamp = $payload['timestamp'] ?? null;
+        if (null !== $timestamp && !is_numeric($timestamp)) {
+            throw new InvalidNotificationException('jitsi', \sprintf('The callback is not a JaaS event: its "timestamp" is %s, not a number.', get_debug_type($timestamp)));
+        }
+        $fields = [];
+        foreach ($payload as $key => $value) {
+            $fields[(string) $key] = $value;
         }
 
         $request->setResult(new Notification(
             $event,
             $type,
-            isset($payload['fqn']) ? $this->api->reference((string) $payload['fqn']) : null,
+            null !== $fqn ? $this->api->reference($fqn) : null,
             $participant,
             // "timestamp": Unix time in milliseconds.
-            isset($payload['timestamp']) ? (new \DateTimeImmutable())->setTimestamp((int) floor(((int) $payload['timestamp']) / 1000)) : null,
-            isset($payload['idempotencyKey']) ? (string) $payload['idempotencyKey'] : null,
-            $payload,
+            null !== $timestamp ? (new \DateTimeImmutable())->setTimestamp((int) floor(((int) $timestamp) / 1000)) : null,
+            self::field($payload, 'idempotencyKey'),
+            $fields,
         ));
+    }
+
+    /**
+     * A field of the callback as a string: null when it is absent, a number
+     * as its string; anything else is not what JaaS sends - refused, never
+     * read as the room, the key or the participant "Array".
+     *
+     * @param array<mixed> $values
+     */
+    private static function field(array $values, string $key, ?string $name = null): ?string
+    {
+        $value = $values[$key] ?? null;
+        if (null === $value || \is_string($value) || \is_int($value) || \is_float($value)) {
+            return null === $value ? null : (string) $value;
+        }
+
+        throw new InvalidNotificationException('jitsi', \sprintf('The callback is not a JaaS event: its "%s" is %s, not a string.', $name ?? $key, get_debug_type($value)));
     }
 }
