@@ -40,6 +40,19 @@ the media.
 that refuses to be framed (`embed: false`), the webhooks, and what was verified - a real meeting
 on a public open instance; tokens, JaaS and webhooks against the documentation only.
 
+## Install
+
+```sh
+composer require omnimeet/jitsi
+```
+
+It requires `omnisense/omnimeet` `^1.0`, installed with it. A real call needs: a Jitsi Meet instance
+(its domain; its app id and secret when it asks for tokens), or a Jitsi as a Service account (its
+key pair). Nothing is called: a room exists when its first participant comes in. With no account,
+its tests run on recorded answers (a `MockHttpClient`), and
+[omnisense/omnimeet](https://github.com/glitchr-omnisense/omnimeet#plain-php-install-and-a-first-call)'s
+README has a first call that runs without one.
+
 ## Responsibility
 
 This package is an independent, unofficial client: it is not affiliated with, endorsed by or
